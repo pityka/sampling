@@ -13,14 +13,19 @@ object ImportanceSampling {
 
     def weight(x: Double) =
       evaluateUnnormalizedTarget(x) / evaluateSamplingDistribution(x)
-    val totalWeight = samples.map(weight).sum
-    val numerator = samples.map(sample => f(sample) * weight(sample)).sum
+
+    val weights = samples.map(weight).toArray
+    val totalWeight = weights.sum
+    val numerator = samples.zipWithIndex.map {
+      case (sample, i) => f(sample) * weights(i)
+    }.sum
     val estimate = numerator / totalWeight
-    def weight_i(x: Double) = weight(x) / totalWeight
-    val variance = samples.map { sample =>
-      val wi = weight_i(sample)
-      val d = f(sample) - estimate
-      wi * wi * d * d
+    def weight_i(x: Double, i: Int) = weights(i) / totalWeight
+    val variance = samples.zipWithIndex.map {
+      case (sample, i) =>
+        val wi = weight_i(sample, i)
+        val d = f(sample) - estimate
+        wi * wi * d * d
     }.sum
     Estimate(estimate, variance)
 
